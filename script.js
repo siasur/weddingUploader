@@ -48,9 +48,9 @@ function validateFile(file) {
   const sizeMB = file.size / (1024 * 1024);
   if (!allowedTypes.includes(type)) {
     return { error: "Not an image/video", valid: false };
-  } else if (type.startsWith("image/") && sizeMB > 10) {
+  } else if (type.startsWith("image/") && sizeMB > 25) {
     return { error: "Image too large (max 10MB)", valid: false };
-  } else if (type.startsWith("video/") && sizeMB > 200) {
+  } else if (type.startsWith("video/") && sizeMB > 25) {
     return { error: "Video too large (max 200MB)", valid: false };
   }
   return { error: null, valid: true };
