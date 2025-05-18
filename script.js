@@ -11,7 +11,7 @@ const allowedTypes = [
   "video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska"
 ];
 
-let currentFiles = [];
+let allFiles = [];
 let invalidFileIds = new Set();
 
 // Cookie helpers
@@ -39,7 +39,7 @@ function getFileId(file) {
 }
 
 function updateUploadBtnState() {
-  uploadBtn.disabled = invalidFileIds.size > 0 || currentFiles.length === 0;
+  uploadBtn.disabled = invalidFileIds.size > 0 || allFiles.length === 0;
 }
 
 // File validation and rendering
@@ -114,9 +114,10 @@ function renderFileEntry(file, validation) {
   removeBtn.onclick = () => {
     li.remove();
     const fileId = getFileId(file);
-    currentFiles = currentFiles.filter(f => getFileId(f) !== fileId);
+    allFiles = allFiles.filter(f => getFileId(f) !== fileId);
     invalidFileIds.delete(fileId);
-    if (currentFiles.length === 0) fileInput.value = "";
+    if (allFiles.length === 0) fileInput.value = "";
+    updateFileList(allFiles);
     updateUploadBtnState();
   };
 
@@ -137,33 +138,23 @@ function updateFileList(files) {
 }
 
 // File display and merging
-function displayFiles(files, additive = false) {
+function displayFiles(files) {
   let filesArr = Array.from(files);
 
-  // Merge with currentFiles if additive, else replace
-  let mergedFiles;
-  if (additive) {
-    const existingIds = new Set(currentFiles.map(getFileId));
-    mergedFiles = currentFiles.concat(
-      filesArr.filter(f => !existingIds.has(getFileId(f)))
-    );
-  } else {
-    mergedFiles = filesArr;
-  }
+  // Merge new files with existing, avoiding duplicates by fileId
+  const existingIds = new Set(allFiles.map(getFileId));
+  const newFiles = filesArr.filter(f => !existingIds.has(getFileId(f)));
+  allFiles = allFiles.concat(newFiles);
 
-  currentFiles = [];
   invalidFileIds = new Set();
-
-  mergedFiles.forEach(file => {
+  allFiles.forEach(file => {
     const validation = validateFile(file);
-    if (validation.valid) {
-      currentFiles.push(file);
-    } else {
+    if (!validation.valid) {
       invalidFileIds.add(getFileId(file));
     }
   });
 
-  updateFileList(mergedFiles);
+  updateFileList(allFiles);
   updateUploadBtnState();
 }
 
@@ -177,7 +168,7 @@ dropzone.addEventListener("click", () => {
 
 // Events
 fileInput.addEventListener("change", () => {
-  displayFiles(fileInput.files, true); // additive
+  displayFiles(fileInput.files);
 });
 
 dropzone.addEventListener("dragover", e => {
@@ -192,37 +183,35 @@ dropzone.addEventListener("dragleave", () => {
 dropzone.addEventListener("drop", e => {
   e.preventDefault();
   dropzone.classList.remove("dragover");
-  displayFiles(e.dataTransfer.files, true); // additive
+  displayFiles(e.dataTransfer.files);
 });
 
 removeInvalidBtn.addEventListener("click", () => {
-  // Remove all invalid files from the DOM and from merged list
   if (invalidFileIds.size === 0) return;
   // Remove invalid entries from DOM
   invalidFileIds.forEach(fileId => {
     const li = fileList.querySelector(`li[data-file-id="${fileId}"]`);
     if (li) li.remove();
   });
-  // Remove invalid files from currentFiles (shouldn't be present, but for safety)
   // Only keep valid files
-  currentFiles = currentFiles.filter(f => !invalidFileIds.has(getFileId(f)));
+  allFiles = allFiles.filter(f => !invalidFileIds.has(getFileId(f)));
   invalidFileIds.clear();
+  updateFileList(allFiles);
   updateUploadBtnState();
-  // If no files left, clear file input
-  if (currentFiles.length === 0) fileInput.value = "";
+  if (allFiles.length === 0) fileInput.value = "";
 });
 
 uploadBtn.addEventListener("click", async () => {
   const name = nameInput.value.trim();
   if (!name) return alert("Please enter your name.");
-  if (currentFiles.length === 0) return alert("Please select valid image/video files.");
+  if (allFiles.length === 0) return alert("Please select valid image/video files.");
   if (invalidFileIds.size > 0) return alert("Please remove all invalid files before uploading.");
 
   setCookie("uploaderName", name, 180);
 
   const formData = new FormData();
   formData.append("name", name);
-  currentFiles.forEach(file => formData.append("files", file));
+  allFiles.forEach(file => formData.append("files", file));
 
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
