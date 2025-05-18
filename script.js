@@ -137,7 +137,7 @@ function updateFileList(files) {
   });
 }
 
-// File display and merging
+// Add files to the list
 function displayFiles(files) {
   let filesArr = Array.from(files);
 
@@ -156,6 +156,7 @@ function displayFiles(files) {
 
   updateFileList(allFiles);
   updateUploadBtnState();
+  fileInput.value = ""; // Clear file input after processing
 }
 
 // Hide file input visually (but keep accessible for click)
