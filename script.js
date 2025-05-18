@@ -167,6 +167,14 @@ function displayFiles(files, additive = false) {
   updateUploadBtnState();
 }
 
+// Hide file input visually (but keep accessible for click)
+fileInput.style.display = "none";
+
+// Open file selector when clicking dropzone
+dropzone.addEventListener("click", () => {
+  fileInput.click();
+});
+
 // Events
 fileInput.addEventListener("change", () => {
   displayFiles(fileInput.files, true); // additive
