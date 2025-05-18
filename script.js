@@ -250,20 +250,18 @@ uploadBtn.addEventListener("click", async () => {
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
 
-  // Split files into bundles of 5
-  const bundles = [];
-  for (let i = 0; i < allFiles.length; i += 5) {
-    bundles.push(allFiles.slice(i, i + 5));
-  }
-
+  // Upload each file individually
   let anyFatalError = false;
   let allResults = [];
 
-  for (let bundleIdx = 0; bundleIdx < bundles.length; bundleIdx++) {
-    const bundle = bundles[bundleIdx];
+  for (let i = 0; i < allFiles.length; i++) {
+    const file = allFiles[i];
     const formData = new FormData();
     formData.append("name", name);
-    bundle.forEach(file => formData.append("files", file));
+    formData.append("files", file);
+
+    // Set status to yellow "Uploading..." before upload starts
+    setFileStatus(file, "Uploading...", "orange");
 
     try {
       const response = await fetch("https://wedding-upload.azurewebsites.net/api/Upload", {
@@ -283,25 +281,19 @@ uploadBtn.addEventListener("click", async () => {
       allResults.push(result);
 
       if (isFatalError || typeof result !== "object" || !result.successful) {
-        // Fatal error, show as string
         anyFatalError = true;
         resultDiv.hidden = false;
         resultDiv.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-        // Mark all files in this bundle as failed
-        bundle.forEach(file => setFileStatus(file, "Hochladen Fehlgeschlagen: Serverfehler", "red"));
+        setFileStatus(file, "Hochladen Fehlgeschlagen: Serverfehler", "red");
         break; // Stop further uploads on fatal error
       } else {
-        // Update each file's status in this bundle
-        bundle.forEach(file => {
-          if (result.successful && result.successful.includes(file.name)) {
-            setFileStatus(file, "Erfolgreich hochgeladen", "green");
-          } else if (result.failed && result.failed[file.name]) {
-            setFileStatus(file, "Hochladen Fehlgeschlagen: " + result.failed[file.name], "red");
-          } else {
-            setFileStatus(file, "Hochladen Fehlgeschlagen: Unbekannter Fehler", "red");
-          }
-        });
-        // Show last message/result for now
+        if (result.successful && result.successful.includes(file.name)) {
+          setFileStatus(file, "Erfolgreich hochgeladen", "green");
+        } else if (result.failed && result.failed[file.name]) {
+          setFileStatus(file, "Hochladen Fehlgeschlagen: " + result.failed[file.name], "red");
+        } else {
+          setFileStatus(file, "Hochladen Fehlgeschlagen: Unbekannter Fehler", "red");
+        }
         resultDiv.hidden = false;
         resultDiv.textContent = result.message || JSON.stringify(result, null, 2);
       }
@@ -309,8 +301,7 @@ uploadBtn.addEventListener("click", async () => {
       anyFatalError = true;
       resultDiv.hidden = false;
       resultDiv.textContent = `Upload failed: ${err.message}`;
-      // Mark all files in this bundle as failed
-      bundle.forEach(file => setFileStatus(file, "Hochladen Fehlgeschlagen: Netzwerkfehler", "red"));
+      setFileStatus(file, "Hochladen Fehlgeschlagen: Unknown Error", "red");
       break; // Stop further uploads on network error
     }
   }
