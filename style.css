@@ -1,0 +1,85 @@
+body {
+  font-family: sans-serif;
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+input[type="text"] {
+  padding: 0.5em;
+  margin-left: 0.5em;
+}
+
+.dropzone {
+  border: 2px dashed #ccc;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.dropzone.dragover {
+  border-color: #007bff;
+  background-color: #e0f0ff;
+}
+
+.file-entry {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.thumbnail {
+  width: 60px;
+  height: 40px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f0f0f0;
+}
+
+.thumbnail img,
+.thumbnail video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0 0.3em;
+  display: flex;
+  align-items: center;
+}
+
+.remove-btn svg {
+  fill: currentColor;
+  width: 1.2em;
+  height: 1.2em;
+  pointer-events: none;
+}
+
+.remove-btn:hover {
+  color: #d00;
+}

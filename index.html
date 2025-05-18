@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wedding Upload</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Upload Your Wedding Memories</h1>
+
+  <label>
+    Your Name:
+    <input type="text" id="name" placeholder="Enter your name" />
+  </label>
+
+  <div id="dropzone" class="dropzone">
+    Drag & drop files here
+  </div>
+  <p>or select files:</p>
+  <input type="file" id="file-input" multiple />
+
+  <h3>Selected Files:</h3>
+  <ul id="file-list"></ul>
+
+  <div style="display: flex; gap: 1em; align-items: center;">
+    <button id="upload-btn">Upload</button>
+    <button id="remove-invalid-btn" type="button">Remove All Invalid</button>
+  </div>
+
+  <h3>Result:</h3>
+  <pre id="result" hidden></pre>
+
+  <script src="script.js"></script>
+</body>
+</html>
