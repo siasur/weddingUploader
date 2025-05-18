@@ -129,11 +129,35 @@ function renderFileEntry(file, validation) {
 }
 
 function updateFileList(files) {
-  fileList.innerHTML = "";
+  // Build a map of current <li> elements by fileId
+  const existingLis = {};
+  Array.from(fileList.children).forEach(li => {
+    if (li.dataset && li.dataset.fileId) {
+      existingLis[li.dataset.fileId] = li;
+    }
+  });
+
+  // Track fileIds to keep
+  const fileIdsToKeep = new Set();
+
   files.forEach(file => {
-    const validation = validateFile(file);
-    const li = renderFileEntry(file, validation);
-    fileList.appendChild(li);
+    const fileId = getFileId(file);
+    fileIdsToKeep.add(fileId);
+
+    if (!existingLis[fileId]) {
+      // New file, add entry
+      const validation = validateFile(file);
+      const li = renderFileEntry(file, validation);
+      fileList.appendChild(li);
+    }
+    // else leave as is
+  });
+
+  // Remove <li> for files no longer present
+  Array.from(fileList.children).forEach(li => {
+    if (li.dataset && li.dataset.fileId && !fileIdsToKeep.has(li.dataset.fileId)) {
+      fileList.removeChild(li);
+    }
   });
 }
 
