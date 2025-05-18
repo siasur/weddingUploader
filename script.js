@@ -234,27 +234,88 @@ uploadBtn.addEventListener("click", async () => {
 
   setCookie("uploaderName", name, 180);
 
-  const formData = new FormData();
-  formData.append("name", name);
-  allFiles.forEach(file => formData.append("files", file));
+  // Helper to update status for a file
+  function setFileStatus(file, text, color) {
+    const fileId = getFileId(file);
+    const li = fileList.querySelector(`li[data-file-id="${fileId}"]`);
+    if (li) {
+      const status = li.querySelector('.file-info span:last-child');
+      if (status) {
+        status.textContent = text;
+        status.style.color = color;
+      }
+    }
+  }
 
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
 
-  try {
-    const response = await fetch("https://wedding-upload.azurewebsites.net/api/Upload", {
-      method: "POST",
-      body: formData
-    });
-
-    const result = await response.json();
-    resultDiv.hidden = false;
-    resultDiv.textContent = JSON.stringify(result, null, 2);
-  } catch (err) {
-    resultDiv.hidden = false;
-    resultDiv.textContent = `Upload failed: ${err.message}`;
-  } finally {
-    updateUploadBtnState();
-    uploadBtn.textContent = "Upload";
+  // Split files into bundles of 5
+  const bundles = [];
+  for (let i = 0; i < allFiles.length; i += 5) {
+    bundles.push(allFiles.slice(i, i + 5));
   }
-});
+
+  let anyFatalError = false;
+  let allResults = [];
+
+  for (let bundleIdx = 0; bundleIdx < bundles.length; bundleIdx++) {
+    const bundle = bundles[bundleIdx];
+    const formData = new FormData();
+    formData.append("name", name);
+    bundle.forEach(file => formData.append("files", file));
+
+    try {
+      const response = await fetch("https://wedding-upload.azurewebsites.net/api/Upload", {
+        method: "POST",
+        body: formData
+      });
+
+      let result;
+      let isFatalError = false;
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = await response.text();
+        isFatalError = true;
+      }
+
+      allResults.push(result);
+
+      if (isFatalError || typeof result !== "object" || !result.successful) {
+        // Fatal error, show as string
+        anyFatalError = true;
+        resultDiv.hidden = false;
+        resultDiv.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+        // Mark all files in this bundle as failed
+        bundle.forEach(file => setFileStatus(file, "Hochladen Fehlgeschlagen: Serverfehler", "red"));
+        break; // Stop further uploads on fatal error
+      } else {
+        // Update each file's status in this bundle
+        bundle.forEach(file => {
+          if (result.successful && result.successful.includes(file.name)) {
+            setFileStatus(file, "Erfolgreich hochgeladen", "green");
+          } else if (result.failed && result.failed[file.name]) {
+            setFileStatus(file, "Hochladen Fehlgeschlagen: " + result.failed[file.name], "red");
+          } else {
+            setFileStatus(file, "Hochladen Fehlgeschlagen: Unbekannter Fehler", "red");
+          }
+        });
+        // Show last message/result for now
+        resultDiv.hidden = false;
+        resultDiv.textContent = result.message || JSON.stringify(result, null, 2);
+      }
+    } catch (err) {
+      anyFatalError = true;
+      resultDiv.hidden = false;
+      resultDiv.textContent = `Upload failed: ${err.message}`;
+      // Mark all files in this bundle as failed
+      bundle.forEach(file => setFileStatus(file, "Hochladen Fehlgeschlagen: Netzwerkfehler", "red"));
+      break; // Stop further uploads on network error
+    }
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = "Upload";
+}
+);
